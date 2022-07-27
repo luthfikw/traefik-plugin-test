@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"text/template"
 )
@@ -60,6 +61,17 @@ func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		req.Header.Set(key, writer.String())
+	}
+
+	if req.Body != nil {
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			http.Error(rw, "can't read body", http.StatusBadRequest)
+			return
+		}
+
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		req.Header.Set("x-body", string(body))
 	}
 
 	a.next.ServeHTTP(rw, req)
